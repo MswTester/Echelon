@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "lib": ["DOM", "ESNext"],
+    "jsx": "preserve", // Babel이 JSX를 처리하도록 설정
+    "jsxFactory": "createElement",
+    "jsxFragmentFactory": "Fragment",
+    // "jsxImportSource": "echelon-framework", // 만약 runtime: 'automatic' 및 사용자 정의 jsx runtime 사용 시
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "declarationDir": "dist/types",
+    "outDir": "dist", // Babel 사용 시 Rollup이 최종 output 처리
+    "rootDir": "src",
+    "baseUrl": ".",
+    "paths": {
+      "echelon": ["src/index"],
+      "echelon/*": ["src/*"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "examples", "tests", "**/*.test.ts", "**/*.spec.ts"]
+}
