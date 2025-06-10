@@ -2,7 +2,7 @@
 module.exports = {
     preset: 'ts-jest', // TypeScript 파일(.ts, .tsx)을 위한 프리셋
     testEnvironment: 'jsdom', // DOM API 시뮬레이션을 위해 jsdom 환경 사용 (프론트엔드 프레임워크에 적합)
-    roots: ['<rootDir>/src', '<rootDir>/tests'], // 테스트 파일이 위치할 기본 경로들
+    roots: ['<rootDir>/src'], // 테스트 파일이 src 하위에 위치
     moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'], // 테스트 대상 파일 확장자
   
     // TypeScript 및 JSX 변환 설정
@@ -40,7 +40,7 @@ module.exports = {
   
     // 각 테스트 파일 실행 전에 실행할 설정 파일 (전역 설정)
     setupFilesAfterEnv: [
-      '<rootDir>/tests/setupTests.ts', // 예시 경로
+      '<rootDir>/src/tests/setupTests.ts', // 전역 설정 파일 경로 수정
       // 'reflect-metadata', // 데코레이터 메타데이터 사용 시
     ],
   
