@@ -5,6 +5,23 @@ import { Fragment, EchelonElement } from 'echelon/core/jsx'; // createElement는
 import { COMPONENT_META_KEY, ComponentMeta, EchelonInternalComponentInstance, INTERNAL_INSTANCE_KEY } from 'echelon/core/types';
 import { getStoreValue, setStoreValue, subscribeStore, hasStore } from 'echelon/core/store';
 
+function callWithErrorHandling(instance: EchelonInternalComponentInstance, methodName: string | symbol, args: any[] = []): any {
+  const method = (instance.componentObject as any)[methodName];
+  if (typeof method === 'function') {
+    try {
+      return method.apply(instance.componentObject, args);
+    } catch (err) {
+      const meta = instance.meta;
+      if (meta.errorCapturedMethodName && typeof (instance.componentObject as any)[meta.errorCapturedMethodName] === 'function') {
+        const res = (instance.componentObject as any)[meta.errorCapturedMethodName](err, { method: methodName });
+        if (res === false) throw err;
+      } else {
+        console.error(err);
+      }
+    }
+  }
+}
+
 /**
  * 컴포넌트 클래스 필드와 DOM 요소의 프로퍼티/메서드/스타일/이벤트 및
  * 반응형 상태(@State)를 초기화하고 바인딩합니다.
@@ -109,6 +126,7 @@ function initializeComponentBindingsAndState(instance: EchelonInternalComponentI
       },
       set(newValue) {
         if (currentValue !== newValue) {
+          const oldValue = currentValue;
           currentValue = newValue;
           if (domInteractionAllowed) {
             if (type === 'property' && domName) {
@@ -120,6 +138,24 @@ function initializeComponentBindingsAndState(instance: EchelonInternalComponentI
                 (hostDomElement as HTMLElement).style[prop as any] = val as any;
               });
             }
+          }
+          if (meta.watchHandlers && meta.watchHandlers.has(classFieldName)) {
+            const handlers = meta.watchHandlers.get(classFieldName)!;
+            handlers.forEach(handlerName => {
+              const handler = (componentObject as any)[handlerName];
+              if (typeof handler === 'function') {
+                try {
+                  handler.call(componentObject, newValue, oldValue);
+                } catch (err) {
+                  if (meta.errorCapturedMethodName && typeof (componentObject as any)[meta.errorCapturedMethodName] === 'function') {
+                    const res = (componentObject as any)[meta.errorCapturedMethodName](err, { field: classFieldName });
+                    if (res === false) throw err;
+                  } else {
+                    console.error(err);
+                  }
+                }
+              }
+            });
           }
           // 이 필드가 @State 필드라면, 변경 시 리렌더링 요청
           if (meta.stateFields.has(classFieldName) && instance.isMounted) {
@@ -209,6 +245,10 @@ function createComponentInstance(
 
   initializeComponentBindingsAndState(internalInstance);   // 필드 바인딩 및 상태 초기화
 
+  if (meta.beforeMountMethodName) {
+    callWithErrorHandling(internalInstance, meta.beforeMountMethodName);
+  }
+
   // --- Update 함수 정의 ---
   internalInstance.update = () => {
     if (!internalInstance.isMounted) {
@@ -221,8 +261,12 @@ function createComponentInstance(
     }
     // console.log(`Updating component: ${meta.componentName}`);
 
+    if (meta.beforeUpdateMethodName) {
+      callWithErrorHandling(internalInstance, meta.beforeUpdateMethodName);
+    }
+
     const renderArgs = prepareRenderArgs(internalInstance);
-    const newRenderOutputJsx = (componentObject as any)[meta.renderMethodName](...renderArgs);
+    const newRenderOutputJsx = callWithErrorHandling(internalInstance, meta.renderMethodName, renderArgs);
 
     // 단순화된 DOM 업데이트: 이전 노드 모두 제거 후 새로 추가 (Diffing 없음)
     internalInstance.currentRenderedDomNodes.forEach(node => node.parentNode?.removeChild(node));
@@ -233,11 +277,18 @@ function createComponentInstance(
       internalInstance.hostDomElement.appendChild(node); // 호스트(Fragment 또는 HTMLElement)에 추가
       internalInstance.currentRenderedDomNodes.push(node);
     });
+
+    if (meta.updatedMethodName) {
+      callWithErrorHandling(internalInstance, meta.updatedMethodName);
+    }
   };
 
   // --- Destroy 함수 정의 ---
   internalInstance.destroy = () => {
     // console.log(`Destroying component: ${meta.componentName}`);
+    if (meta.beforeUnmountMethodName) {
+      callWithErrorHandling(internalInstance, meta.beforeUnmountMethodName);
+    }
     // 1. 이벤트 리스너 해제
     internalInstance._eventListeners.forEach(({ eventName, handler, domElement }) => {
       domElement.removeEventListener(eventName, handler);
@@ -250,8 +301,8 @@ function createComponentInstance(
     }
 
     // 2. @Destroyed 생명주기 호출
-    if (meta.destroyedMethodName && typeof (componentObject as any)[meta.destroyedMethodName] === 'function') {
-      (componentObject as any)[meta.destroyedMethodName]();
+    if (meta.destroyedMethodName) {
+      callWithErrorHandling(internalInstance, meta.destroyedMethodName);
     }
 
     // 3. 자식 DOM 노드들 제거
@@ -273,7 +324,7 @@ function createComponentInstance(
       return null; // 또는 에러 DOM 반환
   }
   const initialRenderArgs = prepareRenderArgs(internalInstance);
-  const initialRenderOutputJsx = (componentObject as any)[meta.renderMethodName](...initialRenderArgs);
+  const initialRenderOutputJsx = callWithErrorHandling(internalInstance, meta.renderMethodName, initialRenderArgs);
   const initialRenderedNodes = renderEchelonElementToNodes(initialRenderOutputJsx, internalInstance);
 
   initialRenderedNodes.forEach(node => {
@@ -397,8 +448,8 @@ function callMountedRecursively(nodeOrFragment: Node | DocumentFragment): void {
     const instance = (nodeOrFragment as any).__echelon_internal_instance__ as EchelonInternalComponentInstance;
     if (!instance.isMounted) { // 아직 마운트되지 않은 경우에만
       instance.isMounted = true; // 마운트 상태로 변경
-      if (instance.meta.mountedMethodName && typeof (instance.componentObject as any)[instance.meta.mountedMethodName] === 'function') {
-        (instance.componentObject as any)[instance.meta.mountedMethodName](); // @Mounted 메서드 호출
+      if (instance.meta.mountedMethodName) {
+        callWithErrorHandling(instance, instance.meta.mountedMethodName);
       }
     }
   }

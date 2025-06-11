@@ -1,4 +1,4 @@
-import { createElement, Fragment, mount, Component, Render, State, Event, Store, Use } from 'echelon';
+import { createElement, Fragment, mount, Component, Render, State, Event, Store, Use, Watch } from 'echelon';
 
 @Component('div')
 class Counter {
@@ -56,5 +56,34 @@ describe('Echelon basic component', () => {
 
     container.firstElementChild!.dispatchEvent(new MouseEvent('click'));
     expect(container.innerHTML).toBe('<div><span>1<span><em>1</em></span></span></div>');
+  });
+
+  test('watch decorator triggers on state change', () => {
+    @Component('div')
+    class WatchComp {
+      @State() value = 0;
+      changes: Array<[number, number]> = [];
+
+      @Watch('value')
+      onChange(n: number, o: number) {
+        this.changes.push([n, o]);
+      }
+
+      @Render()
+      render() {
+        return createElement('span', null, this.value);
+      }
+    }
+
+    const container = document.createElement('div');
+    const instance = mount(createElement(WatchComp, null), container)!;
+    const comp = instance.componentObject as any;
+    comp.value = 1;
+    comp.value = 2;
+
+    expect(comp.changes).toEqual([
+      [1, 0],
+      [2, 1],
+    ]);
   });
 });

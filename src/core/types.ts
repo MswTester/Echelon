@@ -13,8 +13,13 @@ export interface ComponentMeta {
   renderMethodName?: string | symbol;
   mountedMethodName?: string | symbol;
   destroyedMethodName?: string | symbol;
-  eventHandlers: Map<string | symbol, string>; 
-  propertyBindings: Map<string | symbol, string>; 
+  beforeMountMethodName?: string | symbol;
+  beforeUpdateMethodName?: string | symbol;
+  updatedMethodName?: string | symbol;
+  beforeUnmountMethodName?: string | symbol;
+  errorCapturedMethodName?: string | symbol;
+  eventHandlers: Map<string | symbol, string>;
+  propertyBindings: Map<string | symbol, string>;
   methodBindings: Map<string | symbol, string>;
   styleBindings: Map<string | symbol, string>;
   styleLayoutFields: Set<string | symbol>;
@@ -22,6 +27,7 @@ export interface ComponentMeta {
   childrenParamIndex?: number;
   stateFields: Set<string | symbol>;
   storeFields?: Map<string | symbol, string>;
+  watchHandlers?: Map<string | symbol, Array<string | symbol>>;
 }
 
 export interface EchelonInternalComponentInstance {
