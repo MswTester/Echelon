@@ -17,6 +17,8 @@ export {
   Style,
   Property,
   Method,
+  Store,
+  Use,
 } from './core/decorators';
 
 // 마운트 함수

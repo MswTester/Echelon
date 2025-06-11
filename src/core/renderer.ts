@@ -3,6 +3,7 @@
 // src/core/renderer.ts
 import { Fragment, EchelonElement } from 'echelon/core/jsx'; // createElement는 디버깅이나 내부용으로 필요할 수 있음
 import { COMPONENT_META_KEY, ComponentMeta, EchelonInternalComponentInstance, INTERNAL_INSTANCE_KEY } from 'echelon/core/types';
+import { getStoreValue, setStoreValue, subscribeStore, hasStore } from 'echelon/core/store';
 
 /**
  * 컴포넌트 클래스 필드와 DOM 요소의 프로퍼티/메서드/스타일/이벤트 및
@@ -39,6 +40,31 @@ function initializeComponentBindingsAndState(instance: EchelonInternalComponentI
 
   const setupFieldProperty = (classFieldName: string | symbol, type: 'property' | 'style' | 'state') => {
     if (processedFields.has(classFieldName)) return; // 이미 처리된 필드는 건너뜀
+
+    // 스토어에 연결된 필드인지 확인
+    const storeId = meta.storeFields?.get(classFieldName);
+    if (storeId) {
+      const existed = hasStore(storeId);
+      const unsubscribe = subscribeStore(storeId, () => {
+        if (instance.isMounted) instance.update();
+      });
+      if (!instance._storeListeners) instance._storeListeners = [];
+      instance._storeListeners.push({ id: storeId, listener: unsubscribe });
+      const initial = (componentObject as any)[classFieldName];
+      if (initial !== undefined && !existed) setStoreValue(storeId, initial);
+      Object.defineProperty(componentObject, classFieldName, {
+        get() {
+          return getStoreValue(storeId);
+        },
+        set(newValue) {
+          setStoreValue(storeId, newValue);
+        },
+        configurable: true,
+        enumerable: true,
+      });
+      processedFields.add(classFieldName);
+      return;
+    }
 
     let currentValue = (componentObject as any)[classFieldName];
     const domInteractionAllowed = isHostHtmlElement;
@@ -195,6 +221,11 @@ function createComponentInstance(
       domElement.removeEventListener(eventName, handler);
     });
     internalInstance._eventListeners = [];
+
+    if (internalInstance._storeListeners) {
+      internalInstance._storeListeners.forEach(({ listener }) => listener());
+      internalInstance._storeListeners = [];
+    }
 
     // 2. @Destroyed 생명주기 호출
     if (meta.destroyedMethodName && typeof (componentObject as any)[meta.destroyedMethodName] === 'function') {
