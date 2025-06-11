@@ -46,5 +46,5 @@ export interface EchelonInternalComponentInstance {
   destroy: () => void;
   _eventListeners: Array<{ eventName: string, handler: (event: Event) => void, domElement: HTMLElement }>;
   _storeListeners?: Array<{ id: string; listener: () => void }>;
-  _computedInfo?: Map<string | symbol, import('./computed').ComputedInfo>;
+  _computedInfo?: Map<string | symbol, import('./computed-fixed').ComputedInfo>;
 }

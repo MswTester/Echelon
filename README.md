@@ -14,11 +14,11 @@ Echelon is a decorator-driven framework with full JSX/TSX support. It lets you b
 ## Quick Start
 
 ```bash
-npm install echelon
+npm install echelonjs
 ```
 
 ```typescript jsx
-import { createElement, Component, Render, State, mount } from 'echelon';
+import { createElement, Component, Render, State, mount } from 'echelonjs';
 
 @Component('button')
 class Counter {
