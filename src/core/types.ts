@@ -28,6 +28,8 @@ export interface ComponentMeta {
   stateFields: Set<string | symbol>;
   storeFields?: Map<string | symbol, string>;
   watchHandlers?: Map<string | symbol, Array<string | symbol>>;
+  routeParamFields?: Map<string | symbol, string>;
+  queryParamFields?: Map<string | symbol, string>;
 }
 
 export interface EchelonInternalComponentInstance {
