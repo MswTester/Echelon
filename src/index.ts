@@ -15,6 +15,7 @@ export {
   Prop,
   Children,
   Style,
+  StyleLayout,
   Property,
   Method,
   Store,

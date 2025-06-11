@@ -23,5 +23,7 @@ module.exports = {
           pragmaFrag: 'Fragment',   // 예: Fragment
         },
       ],
+      require('./babel-plugins/style-decorator'),
     ],
-  };
+ 
+};

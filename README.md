@@ -88,6 +88,23 @@ export class AppRoot {
 // }
 ```
 
+### Style Decorators
+
+You can bind class fields to DOM styles using `@Style` and `@StyleLayout`.
+
+```typescript jsx
+@Component('div')
+class StyledBox {
+  @Style() backgroundColor = 'blue'; // becomes background-color
+  @StyleLayout() style = { color: 'white', transition: 'all 0.2s ease' };
+
+  @Render()
+  render() {
+    return <span>Styled content</span>;
+  }
+}
+```
+
 ### Complex Todo Example
 
 A more advanced example demonstrating nested components and store usage is

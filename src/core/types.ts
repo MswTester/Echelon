@@ -17,6 +17,7 @@ export interface ComponentMeta {
   propertyBindings: Map<string | symbol, string>; 
   methodBindings: Map<string | symbol, string>;
   styleBindings: Map<string | symbol, string>;
+  styleLayoutFields: Set<string | symbol>;
   propMappings: Map<number, string>;
   childrenParamIndex?: number;
   stateFields: Set<string | symbol>;
