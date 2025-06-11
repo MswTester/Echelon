@@ -8,6 +8,21 @@
   "files": [
     "dist"
   ],
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/types/index.d.ts"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MswTester/Echelon.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MswTester/Echelon/issues"
+  },
+  "homepage": "https://github.com/MswTester/Echelon#readme",
   "scripts": {
     "dev": "rollup -c -w",
     "build": "npm run clean && rollup -c",
@@ -28,7 +43,7 @@
     "reactive",
     "decorators"
   ],
-  "author": "Your Name",
+  "author": "MswTester",
   "license": "MIT",
   "devDependencies": {
     "@babel/cli": "^7.20.0",
