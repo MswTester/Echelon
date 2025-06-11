@@ -16,6 +16,7 @@ function getOrCreateComponentMeta(targetOrConstructor: any): ComponentMeta {
       propertyBindings: new Map(),
       methodBindings: new Map(),
       styleBindings: new Map(),
+      styleLayoutFields: new Set(),
       propMappings: new Map(),
       stateFields: new Set(),
       storeFields: new Map(),
@@ -31,6 +32,7 @@ function getOrCreateComponentMeta(targetOrConstructor: any): ComponentMeta {
   if (!meta.propertyBindings) meta.propertyBindings = new Map();
   if (!meta.methodBindings) meta.methodBindings = new Map();
   if (!meta.styleBindings) meta.styleBindings = new Map();
+  if (!meta.styleLayoutFields) meta.styleLayoutFields = new Set();
   if (!meta.propMappings) meta.propMappings = new Map();
   if (!meta.stateFields) meta.stateFields = new Set();
   if (!meta.storeFields) meta.storeFields = new Map();
@@ -98,10 +100,22 @@ export function Method(domMethodName: string) {
   };
 }
 
-export function Style(cssStyleName: string) {
+export function Style(cssStyleName?: string) {
   return function (target: any, classFieldName: string | symbol) {
     const meta = getOrCreateComponentMeta(target);
-    meta.styleBindings.set(classFieldName, cssStyleName);
+    const styleName =
+      cssStyleName ||
+      (typeof classFieldName === 'string'
+        ? classFieldName.replace(/([A-Z])/g, '-$1').toLowerCase()
+        : String(classFieldName));
+    meta.styleBindings.set(classFieldName, styleName);
+  };
+}
+
+export function StyleLayout() {
+  return function (target: any, classFieldName: string | symbol) {
+    const meta = getOrCreateComponentMeta(target);
+    meta.styleLayoutFields.add(classFieldName);
   };
 }
 

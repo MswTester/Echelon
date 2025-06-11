@@ -14,10 +14,17 @@ function initializeComponentBindingsAndState(instance: EchelonInternalComponentI
 
   const isHostHtmlElement = hostDomElement instanceof HTMLElement;
 
-  if (!isHostHtmlElement && 
-      (meta.methodBindings.size > 0 || meta.propertyBindings.size > 0 || meta.styleBindings.size > 0)) {
+  if (
+    !isHostHtmlElement &&
+    (meta.methodBindings.size > 0 ||
+      meta.propertyBindings.size > 0 ||
+      meta.styleBindings.size > 0 ||
+      meta.styleLayoutFields.size > 0)
+  ) {
     if (meta.tagName) {
-      console.warn(`Component "${meta.componentName}" has tagName "${meta.tagName}" but its host DOM is not an HTMLElement. @Method, @Property, @Style bindings will not work.`);
+      console.warn(
+        `Component "${meta.componentName}" has tagName "${meta.tagName}" but its host DOM is not an HTMLElement. @Method, @Property, @Style and @StyleLayout bindings will not work.`
+      );
     }
     // tagName 없는 Fragment 기반 컴포넌트는 이 경고를 발생시키지 않아야 함
   }
@@ -38,7 +45,10 @@ function initializeComponentBindingsAndState(instance: EchelonInternalComponentI
   // 이 Set은 defineProperty가 이미 적용된 필드를 추적하여 중복 적용 방지
   const processedFields = new Set<string | symbol>();
 
-  const setupFieldProperty = (classFieldName: string | symbol, type: 'property' | 'style' | 'state') => {
+  const setupFieldProperty = (
+    classFieldName: string | symbol,
+    type: 'property' | 'style' | 'style-layout' | 'state'
+  ) => {
     if (processedFields.has(classFieldName)) return; // 이미 처리된 필드는 건너뜀
 
     // 스토어에 연결된 필드인지 확인
@@ -80,6 +90,12 @@ function initializeComponentBindingsAndState(instance: EchelonInternalComponentI
         if (domInteractionAllowed && currentValue !== undefined) {
             (hostDomElement as HTMLElement).style[domName as any] = currentValue;
         }
+    } else if (type === 'style-layout' && meta.styleLayoutFields.has(classFieldName)) {
+        if (domInteractionAllowed && currentValue && typeof currentValue === 'object') {
+            Object.entries(currentValue).forEach(([prop, val]) => {
+                (hostDomElement as HTMLElement).style[prop as any] = val as any;
+            });
+        }
     }
     // 'state' 타입은 domName이 필요 없음
 
@@ -99,6 +115,10 @@ function initializeComponentBindingsAndState(instance: EchelonInternalComponentI
               (hostDomElement as any)[domName] = newValue;
             } else if (type === 'style' && domName) {
               (hostDomElement as HTMLElement).style[domName as any] = newValue;
+            } else if (type === 'style-layout' && newValue && typeof newValue === 'object') {
+              Object.entries(newValue).forEach(([prop, val]) => {
+                (hostDomElement as HTMLElement).style[prop as any] = val as any;
+              });
             }
           }
           // 이 필드가 @State 필드라면, 변경 시 리렌더링 요청
@@ -117,6 +137,8 @@ function initializeComponentBindingsAndState(instance: EchelonInternalComponentI
   meta.propertyBindings.forEach((_domPropName, classFieldName) => setupFieldProperty(classFieldName, 'property'));
   // @Style 필드 처리
   meta.styleBindings.forEach((_cssStyleName, classFieldName) => setupFieldProperty(classFieldName, 'style'));
+  // @StyleLayout 필드 처리
+  meta.styleLayoutFields.forEach(classFieldName => setupFieldProperty(classFieldName, 'style-layout'));
   // @State 필드 처리 (이미 Property/Style로 처리되지 않은 경우)
   meta.stateFields.forEach(classFieldName => setupFieldProperty(classFieldName, 'state'));
 

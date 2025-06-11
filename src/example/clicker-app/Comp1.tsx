@@ -1,9 +1,11 @@
-import { Component, Render, State, Event, Property, Prop, Children, Mounted, Style } from 'echelon';
+import { Component, Render, State, Event, Property, Prop, Children, Mounted, Style, StyleLayout } from 'echelon';
 
 @Component('div')
 class Comp1 {
   @State() count: number = 0;
   @Style('background-color') r: string = 'red';
+  @Style() backgroundColor: string = 'blue';
+  @StyleLayout() style = { color: 'white', transition: 'all 0.2s ease' };
   @Property('id') id: string = 'comp-div';
 
   @Event('click') clickHandle(e: MouseEvent) {
@@ -34,4 +36,6 @@ export class Root {
       this.plusFromRoot ++;
     }, 1000);
   }
+
 }
+
