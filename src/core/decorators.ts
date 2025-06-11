@@ -63,6 +63,41 @@ export function Mounted() {
   };
 }
 
+export function BeforeMount() {
+  return function (target: any, propertyKey: string | symbol, _descriptor: PropertyDescriptor) {
+    const meta = getOrCreateComponentMeta(target);
+    meta.beforeMountMethodName = propertyKey;
+  };
+}
+
+export function BeforeUpdate() {
+  return function (target: any, propertyKey: string | symbol, _descriptor: PropertyDescriptor) {
+    const meta = getOrCreateComponentMeta(target);
+    meta.beforeUpdateMethodName = propertyKey;
+  };
+}
+
+export function Updated() {
+  return function (target: any, propertyKey: string | symbol, _descriptor: PropertyDescriptor) {
+    const meta = getOrCreateComponentMeta(target);
+    meta.updatedMethodName = propertyKey;
+  };
+}
+
+export function BeforeUnmount() {
+  return function (target: any, propertyKey: string | symbol, _descriptor: PropertyDescriptor) {
+    const meta = getOrCreateComponentMeta(target);
+    meta.beforeUnmountMethodName = propertyKey;
+  };
+}
+
+export function ErrorCaptured() {
+  return function (target: any, propertyKey: string | symbol, _descriptor: PropertyDescriptor) {
+    const meta = getOrCreateComponentMeta(target);
+    meta.errorCapturedMethodName = propertyKey;
+  };
+}
+
 export function Destroyed() {
   return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
     const meta = getOrCreateComponentMeta(target);
@@ -135,6 +170,16 @@ export function Use(storeId: string) {
     if (!meta.storeFields) meta.storeFields = new Map();
     meta.storeFields.set(classFieldName, storeId);
     meta.stateFields.add(classFieldName);
+  };
+}
+
+export function Watch(stateField: string | symbol) {
+  return function (target: any, methodName: string | symbol) {
+    const meta = getOrCreateComponentMeta(target);
+    if (!meta.watchHandlers) meta.watchHandlers = new Map();
+    const arr = meta.watchHandlers.get(stateField) || [];
+    arr.push(methodName);
+    meta.watchHandlers.set(stateField, arr);
   };
 }
 
