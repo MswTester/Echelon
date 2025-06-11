@@ -214,6 +214,23 @@ function createComponentInstance(
 
   const componentObject = new ComponentClass(); // 생성자 인자는 props에서 받거나 다른 방식으로 처리 가능
 
+  if (meta.routeParamFields && propsFromJsx.__routeParams) {
+    meta.routeParamFields.forEach((paramName, field) => {
+      if (paramName in propsFromJsx.__routeParams) {
+        (componentObject as any)[field] = propsFromJsx.__routeParams[paramName];
+      }
+    });
+  }
+  if (meta.queryParamFields && propsFromJsx.__queryParams) {
+    meta.queryParamFields.forEach((queryName, field) => {
+      if (queryName in propsFromJsx.__queryParams) {
+        (componentObject as any)[field] = propsFromJsx.__queryParams[queryName];
+      }
+    });
+  }
+  delete (propsFromJsx as any).__routeParams;
+  delete (propsFromJsx as any).__queryParams;
+
   let hostDomElement: HTMLElement | DocumentFragment;
   if (meta.tagName) {
     hostDomElement = document.createElement(meta.tagName);

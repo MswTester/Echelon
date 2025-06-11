@@ -35,6 +35,15 @@ export { mount } from './core/renderer';
 export type { EchelonElement } from './core/jsx';
 export type { EchelonInternalComponentInstance, ComponentMeta, INTERNAL_INSTANCE_KEY } from './core/types';
 
+export {
+  Router,
+  RouterOutlet,
+  Link,
+  navigate,
+  Param,
+  Query,
+} from './router';
+
 // Babel JSX pragma가 createElement, Fragment를 찾을 수 있도록 전역 설정 (선택적, 권장되지 않음)
 // if (typeof window !== 'undefined') {
 //   if (!(window as any).createElement) (window as any).createElement = createElement;

@@ -20,6 +20,8 @@ function getOrCreateComponentMeta(targetOrConstructor: any): ComponentMeta {
       propMappings: new Map(),
       stateFields: new Set(),
       storeFields: new Map(),
+      routeParamFields: new Map(),
+      queryParamFields: new Map(),
       // tagName, renderMethodName 등은 데코레이터에서 직접 설정
     };
     Reflect.defineMetadata(COMPONENT_META_KEY, newMeta, constructor);
@@ -36,6 +38,8 @@ function getOrCreateComponentMeta(targetOrConstructor: any): ComponentMeta {
   if (!meta.propMappings) meta.propMappings = new Map();
   if (!meta.stateFields) meta.stateFields = new Set();
   if (!meta.storeFields) meta.storeFields = new Map();
+  if (!meta.routeParamFields) meta.routeParamFields = new Map();
+  if (!meta.queryParamFields) meta.queryParamFields = new Map();
 
   return meta;
 }
@@ -203,3 +207,21 @@ export function Children() {
     meta.childrenParamIndex = parameterIndex;
   };
 }
+export function Param(name: string) {
+  return function (target: any, classFieldName: string | symbol) {
+    const meta = getOrCreateComponentMeta(target);
+    if (!meta.routeParamFields) meta.routeParamFields = new Map();
+    meta.routeParamFields.set(classFieldName, name);
+    meta.stateFields.add(classFieldName);
+  };
+}
+
+export function Query(name: string) {
+  return function (target: any, classFieldName: string | symbol) {
+    const meta = getOrCreateComponentMeta(target);
+    if (!meta.queryParamFields) meta.queryParamFields = new Map();
+    meta.queryParamFields.set(classFieldName, name);
+    meta.stateFields.add(classFieldName);
+  };
+}
+
