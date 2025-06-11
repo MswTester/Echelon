@@ -18,6 +18,7 @@ function getOrCreateComponentMeta(targetOrConstructor: any): ComponentMeta {
       styleBindings: new Map(),
       propMappings: new Map(),
       stateFields: new Set(),
+      storeFields: new Map(),
       // tagName, renderMethodName 등은 데코레이터에서 직접 설정
     };
     Reflect.defineMetadata(COMPONENT_META_KEY, newMeta, constructor);
@@ -32,6 +33,7 @@ function getOrCreateComponentMeta(targetOrConstructor: any): ComponentMeta {
   if (!meta.styleBindings) meta.styleBindings = new Map();
   if (!meta.propMappings) meta.propMappings = new Map();
   if (!meta.stateFields) meta.stateFields = new Set();
+  if (!meta.storeFields) meta.storeFields = new Map();
 
   return meta;
 }
@@ -100,6 +102,25 @@ export function Style(cssStyleName: string) {
   return function (target: any, classFieldName: string | symbol) {
     const meta = getOrCreateComponentMeta(target);
     meta.styleBindings.set(classFieldName, cssStyleName);
+  };
+}
+
+export function Store(id?: string) {
+  return function (target: any, classFieldName: string | symbol) {
+    const meta = getOrCreateComponentMeta(target);
+    const storeId = id || String(classFieldName);
+    if (!meta.storeFields) meta.storeFields = new Map();
+    meta.storeFields.set(classFieldName, storeId);
+    meta.stateFields.add(classFieldName);
+  };
+}
+
+export function Use(storeId: string) {
+  return function (target: any, classFieldName: string | symbol) {
+    const meta = getOrCreateComponentMeta(target);
+    if (!meta.storeFields) meta.storeFields = new Map();
+    meta.storeFields.set(classFieldName, storeId);
+    meta.stateFields.add(classFieldName);
   };
 }
 

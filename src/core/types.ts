@@ -16,10 +16,11 @@ export interface ComponentMeta {
   eventHandlers: Map<string | symbol, string>; 
   propertyBindings: Map<string | symbol, string>; 
   methodBindings: Map<string | symbol, string>;
-  styleBindings: Map<string | symbol, string>; 
-  propMappings: Map<number, string>; 
+  styleBindings: Map<string | symbol, string>;
+  propMappings: Map<number, string>;
   childrenParamIndex?: number;
-  stateFields: Set<string | symbol>; 
+  stateFields: Set<string | symbol>;
+  storeFields?: Map<string | symbol, string>;
 }
 
 export interface EchelonInternalComponentInstance {
@@ -33,4 +34,5 @@ export interface EchelonInternalComponentInstance {
   update: () => void;
   destroy: () => void;
   _eventListeners: Array<{ eventName: string, handler: (event: Event) => void, domElement: HTMLElement }>;
+  _storeListeners?: Array<{ id: string; listener: () => void }>;
 }
