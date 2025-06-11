@@ -4,6 +4,7 @@
 import { Fragment, EchelonElement } from 'echelon/core/jsx'; // createElement는 디버깅이나 내부용으로 필요할 수 있음
 import { COMPONENT_META_KEY, ComponentMeta, EchelonInternalComponentInstance, INTERNAL_INSTANCE_KEY } from 'echelon/core/types';
 import { getStoreValue, setStoreValue, subscribeStore, hasStore } from 'echelon/core/store';
+import { startTracking, endTracking, recordDependency, ComputedInfo } from 'echelon/core/computed';
 
 function callWithErrorHandling(instance: EchelonInternalComponentInstance, methodName: string | symbol, args: any[] = []): any {
   const method = (instance.componentObject as any)[methodName];
@@ -122,6 +123,7 @@ function initializeComponentBindingsAndState(instance: EchelonInternalComponentI
         // if (type === 'property' && domInteractionAllowed && domName) {
         //   return (hostDomElement as any)[domName];
         // }
+        recordDependency(instance, classFieldName);
         return currentValue;
       },
       set(newValue) {
@@ -157,6 +159,49 @@ function initializeComponentBindingsAndState(instance: EchelonInternalComponentI
               }
             });
           }
+          if (meta.computedDepsMap && meta.computedDepsMap.has(classFieldName) && instance._computedInfo) {
+            const cFields = meta.computedDepsMap.get(classFieldName)!;
+            cFields.forEach(cf => {
+              const info = instance._computedInfo!.get(cf);
+              if (!info) return;
+              const prev = info.cached;
+              const oldDeps = info.deps;
+              info.dirty = true;
+              startTracking(instance);
+              try {
+                info.cached = info.compute();
+              } finally {
+                info.deps = endTracking();
+              }
+              oldDeps.forEach(dep => {
+                const set = meta.computedDepsMap?.get(dep);
+                set?.delete(cf);
+                if (set && set.size === 0) meta.computedDepsMap!.delete(dep);
+              });
+              info.deps.forEach(dep => {
+                if (!meta.computedDepsMap) meta.computedDepsMap = new Map();
+                let set = meta.computedDepsMap.get(dep);
+                if (!set) { set = new Set(); meta.computedDepsMap.set(dep, set); }
+                set.add(cf);
+              });
+              if (prev !== info.cached && meta.watchHandlers && meta.watchHandlers.has(cf)) {
+                const handlers = meta.watchHandlers.get(cf)!;
+                handlers.forEach(handlerName => {
+                  const handler = (componentObject as any)[handlerName];
+                  if (typeof handler === 'function') {
+                    try { handler.call(componentObject, info.cached, prev); } catch (err) {
+                      if (meta.errorCapturedMethodName && typeof (componentObject as any)[meta.errorCapturedMethodName] === 'function') {
+                        const res = (componentObject as any)[meta.errorCapturedMethodName](err, { field: cf });
+                        if (res === false) throw err;
+                      } else {
+                        console.error(err);
+                      }
+                    }
+                  }
+                });
+              }
+            });
+          }
           // 이 필드가 @State 필드라면, 변경 시 리렌더링 요청
           if (meta.stateFields.has(classFieldName) && instance.isMounted) {
             instance.update();
@@ -177,6 +222,59 @@ function initializeComponentBindingsAndState(instance: EchelonInternalComponentI
   meta.styleLayoutFields.forEach(classFieldName => setupFieldProperty(classFieldName, 'style-layout'));
   // @State 필드 처리 (이미 Property/Style로 처리되지 않은 경우)
   meta.stateFields.forEach(classFieldName => setupFieldProperty(classFieldName, 'state'));
+
+  if (meta.computedFields && meta.computedFields.size > 0) {
+    if (!instance._computedInfo) instance._computedInfo = new Map();
+    meta.computedFields.forEach(field => {
+      const desc = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(componentObject), field);
+      if (!desc || typeof desc.get !== 'function') return;
+      const computeFn = desc.get.bind(componentObject);
+      const info: ComputedInfo = { deps: new Set(), compute: computeFn, cached: undefined, dirty: true };
+      const deps = startTracking(instance);
+      try {
+        info.cached = computeFn();
+      } finally {
+        info.deps = endTracking();
+      }
+      info.deps.forEach(dep => {
+        if (!meta.computedDepsMap) meta.computedDepsMap = new Map();
+        let set = meta.computedDepsMap.get(dep);
+        if (!set) { set = new Set(); meta.computedDepsMap.set(dep, set); }
+        set.add(field);
+      });
+      info.dirty = false;
+      instance._computedInfo!.set(field, info);
+      Object.defineProperty(componentObject, field, {
+        get() {
+          if (info.dirty) {
+            const prevDeps = info.deps;
+            startTracking(instance);
+            try {
+              info.cached = computeFn();
+            } finally {
+              info.deps = endTracking();
+            }
+            prevDeps.forEach(d => {
+              const s = meta.computedDepsMap?.get(d);
+              s?.delete(field);
+              if (s && s.size === 0) meta.computedDepsMap!.delete(d);
+            });
+            info.deps.forEach(dep => {
+              if (!meta.computedDepsMap) meta.computedDepsMap = new Map();
+              let set = meta.computedDepsMap.get(dep);
+              if (!set) { set = new Set(); meta.computedDepsMap.set(dep, set); }
+              set.add(field);
+            });
+            info.dirty = false;
+          }
+          recordDependency(instance, field);
+          return info.cached;
+        },
+        enumerable: true,
+        configurable: true,
+      });
+    });
+  }
 
 
   // @Event 바인딩: 데코레이터로 지정된 클래스 메서드를 이벤트 핸들러로 등록
@@ -247,6 +345,7 @@ function createComponentInstance(
     jsxChildren,         // JSX children
     isMounted: false,
     _eventListeners: [],
+    _computedInfo: new Map(),
     update: () => { /* 아래에서 실제 함수로 정의 */ },
     destroy: () => { /* 아래에서 실제 함수로 정의 */ },
   };
