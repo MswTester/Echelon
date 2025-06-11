@@ -88,6 +88,35 @@ export class AppRoot {
 // }
 ```
 
+### Complex Todo Example
+
+A more advanced example demonstrating nested components and store usage is
+provided in `src/example/TodoApp.tsx`.
+
+```typescript
+import { createElement, mount } from 'echelon';
+import { TodoApp } from 'echelon/example/TodoApp';
+
+const root = document.getElementById('app');
+if (root) {
+  mount(createElement(TodoApp, null), root);
+}
+```
+
+Running this example shows that Echelon can handle dynamic lists and
+inter-component communication, making it suitable for complex front-end
+projects.
+
+## Publishing
+
+The framework builds to both ESM and CJS outputs. Create the npm package with:
+
+```bash
+npm run build
+npm pack
+```
+This generates a tarball ready for publishing to the npm registry.
+
 ## Available Scripts
 
 In the project root you can use the following scripts:
