@@ -18,6 +18,7 @@ export {
   Event,
   State,
   Watch,
+  Computed,
   Prop,
   Children,
   Style,

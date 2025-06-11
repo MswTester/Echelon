@@ -125,6 +125,14 @@ export function State() {
   };
 }
 
+export function Computed() {
+  return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
+    const meta = getOrCreateComponentMeta(target);
+    if (!meta.computedFields) meta.computedFields = new Set();
+    meta.computedFields.add(propertyKey);
+  };
+}
+
 export function Property(domPropertyName: string) {
   return function (target: any, classFieldName: string | symbol) {
     const meta = getOrCreateComponentMeta(target);

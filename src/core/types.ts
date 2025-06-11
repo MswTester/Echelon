@@ -30,6 +30,8 @@ export interface ComponentMeta {
   watchHandlers?: Map<string | symbol, Array<string | symbol>>;
   routeParamFields?: Map<string | symbol, string>;
   queryParamFields?: Map<string | symbol, string>;
+  computedFields?: Set<string | symbol>;
+  computedDepsMap?: Map<string | symbol, Set<string | symbol>>;
 }
 
 export interface EchelonInternalComponentInstance {
@@ -44,4 +46,5 @@ export interface EchelonInternalComponentInstance {
   destroy: () => void;
   _eventListeners: Array<{ eventName: string, handler: (event: Event) => void, domElement: HTMLElement }>;
   _storeListeners?: Array<{ id: string; listener: () => void }>;
+  _computedInfo?: Map<string | symbol, import('./computed').ComputedInfo>;
 }

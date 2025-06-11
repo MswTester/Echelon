@@ -1,4 +1,4 @@
-import { createElement, Fragment, mount, Component, Render, State, Event, Store, Use, Watch } from 'echelon';
+import { createElement, Fragment, mount, Component, Render, State, Event, Store, Use, Watch, Computed } from 'echelon';
 
 @Component('div')
 class Counter {
@@ -85,5 +85,28 @@ describe('Echelon basic component', () => {
       [1, 0],
       [2, 1],
     ]);
+  });
+
+  test('computed decorator updates with dependencies', () => {
+    @Component('div')
+    class Comp {
+      @State() text = 'some text';
+
+      @Computed()
+      get upper() {
+        return this.text.replace('some', 'every');
+      }
+
+      @Render()
+      render() {
+        return createElement('span', null, this.upper);
+      }
+    }
+
+    const container = document.createElement('div');
+    const inst = mount(createElement(Comp, null), container)!;
+    expect(container.innerHTML).toBe('<div><span>every text</span></div>');
+    (inst.componentObject as any).text = 'something';
+    expect(container.innerHTML).toBe('<div><span>everything</span></div>');
   });
 });
